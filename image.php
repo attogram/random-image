@@ -1,7 +1,7 @@
 <?php
 // Random Image
 
-define('__RANDOM_IMAGE__', '0.0.2');
+define('__RANDOM_IMAGE__', '0.0.3');
 
 $random_image = new random_image();
 
@@ -22,6 +22,7 @@ class random_image {
     var $methods;
     var $colors;
     var $debug;
+	var $db;
 
     //////////////////////////////////////////////////////////    
     function __construct() {
@@ -34,7 +35,7 @@ class random_image {
         $this->min_height     = 1;
         $this->max_height     = 1024;
         
-        $this->methods = array('rand', 'mt_rand');
+        $this->methods = array('rand', 'mt_rand', 'sqlite_random');
         $this->default_method = 'rand';
         
         $this->debug = TRUE;
@@ -76,6 +77,9 @@ class random_image {
                 return rand($min, $max);
             case 'mt_rand':
                 return mt_rand($min, $max);
+			case 'sqlite_random':
+				$this->init_sqlite();
+				return $this->sqlite_random($min, $max);
             default:
                 return FALSE;
         }
@@ -189,9 +193,62 @@ class random_image {
     }
 
     //////////////////////////////////////////////////////////
+	function init_sqlite() {
+		if( $this->db ) { return $this->db; }
+		if( !in_array('sqlite', PDO::getAvailableDrivers() ) ) {
+			return $this->db = FALSE;
+		}
+		try {
+			$this->db = new PDO('sqlite::memory:');
+		} catch(PDOException $e) {
+			return $this->db = FALSE;
+		}
+		return TRUE;
+	}
+	
+
+    //////////////////////////////////////////////////////////
+	function sqlite_random($min, $max) {
+		
+		$sql = 'SELECT abs(random()) % (:high  - :low) + :low AS random';
+
+        if( !$statement = $this->db->prepare($sql) ) {
+			return $min;
+        }
+
+		$statement->bindParam( ':high', $max );
+		$statement->bindParam( ':low', $min );
+
+		 if( !$statement->execute() ) {
+            return $min;
+        }
+		
+        if( !$r = $statement->fetchAll(PDO::FETCH_ASSOC) ) {
+            return $min;
+        }
+		
+		return $r[0]['random'];
+		
+	}
+
+	//////////////////////////////////////////////////////////
+	function init_database() {
+		$this->debug('::init_database()');
+
+		try {
+			return $this->db = new PDO('sqlite:'. $this->database_name);
+		} catch(PDOException $e) {
+			$this->error('::init_database: ' . $this->database_name . '  ERROR: '. $e->getMessage());
+			return $this->db = FALSE;
+		}
+	}
+	
+    //////////////////////////////////////////////////////////
     function is_positive_number($n='') { 
         if ( preg_match('/^[0-9]*$/', $n )) { return TRUE; }
         return FALSE;
     }
 
 } // end class random_image
+
+

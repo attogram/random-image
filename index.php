@@ -33,6 +33,7 @@ a:hover { background-color:yellow; color:black; }
 Method: <select name="m">
 <option value="rand" <?php if( @$_GET['m'] == 'rand' ) { print ' selected="selected"'; } ?>>PHP rand()</option>
 <option value="mt_rand" <?php if( @$_GET['m'] == 'mt_rand' ) { print ' selected="selected"'; } ?>>PHP mt_rand()</option>
+<option value="sqlite_random" <?php if( @$_GET['m'] == 'sqlite_random' ) { print ' selected="selected"'; } ?>>SQLite random</option>
 </select>
  &nbsp; 
 Width: <input type="text" name="w" size="4" maxlength="4" value="<?php print $width; ?>"> 
