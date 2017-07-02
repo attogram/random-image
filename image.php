@@ -1,7 +1,7 @@
 <?php
 // Random Image
 
-define('__RANDOM_IMAGE__', '0.0.3');
+define('__RANDOM_IMAGE__', '0.0.4');
 
 $random_image = new random_image();
 
@@ -22,7 +22,7 @@ class random_image {
     var $methods;
     var $colors;
     var $debug;
-	var $db;
+    var $db;
 
     //////////////////////////////////////////////////////////    
     function __construct() {
@@ -38,12 +38,12 @@ class random_image {
         $this->methods = array('rand', 'mt_rand', 'sqlite_random');
         $this->default_method = 'rand';
         
-        $this->debug = TRUE;
+        $this->debug = FALSE;
         
         $this->set_width();
         $this->set_height();
-        $this->set_method();
         $this->init_image();
+        $this->set_method();
         $this->set_colors();
         $this->fill_image();
         $this->debug_info();
@@ -64,8 +64,11 @@ class random_image {
     function fill_image() {
         for ($x = 0; $x < $this->width; $x++) {
             for ($y = 0; $y < $this->height; $y++) {
-                $random_color = $this->get_random_from_method(1, sizeof($this->colors));
-                imagesetpixel($this->image, $x, $y, $this->colors[$random_color] );
+                imagesetpixel(
+                    $this->image, 
+                    $x, $y, 
+                    $this->colors[ $this->get_random_from_method(0, sizeof($this->colors)-1) ] 
+                );
             }
         }
     }
@@ -77,9 +80,9 @@ class random_image {
                 return rand($min, $max);
             case 'mt_rand':
                 return mt_rand($min, $max);
-			case 'sqlite_random':
-				$this->init_sqlite();
-				return $this->sqlite_random($min, $max);
+            case 'sqlite_random':
+                $this->init_sqlite();
+                return $this->sqlite_random($min, $max);
             default:
                 return FALSE;
         }
@@ -168,81 +171,58 @@ class random_image {
     //////////////////////////////////////////////////////////
     function set_colors() {
         $this->colors = array();
-
-/*
-        $this->colors[1] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[2] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[3] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[4] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[5] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[6] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[7] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-        $this->colors[8] = imagecolorallocate($this->image, $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255), $this->get_random_from_method(0, 255)); 
-*/
-
-/**/
-        $this->colors[1] = imagecolorallocate($this->image, 255, 0,   0  ); // red
-        $this->colors[2] = imagecolorallocate($this->image, 0,   255, 0  ); // green
-        $this->colors[3] = imagecolorallocate($this->image, 0,   0,   255); // blue
-        $this->colors[4] = imagecolorallocate($this->image, 0,   255, 255); // cyan
-        $this->colors[5] = imagecolorallocate($this->image, 255, 0,   255); // magenta
-        $this->colors[6] = imagecolorallocate($this->image, 255, 255, 0  ); // yellow
-        $this->colors[7] = imagecolorallocate($this->image, 0,   0,   0  ); // black
-        $this->colors[8] = imagecolorallocate($this->image, 255, 255, 255);    // white
-/**/
+        $this->colors[] = imagecolorallocate($this->image, 0,   0,   0  ); // black
+        $this->colors[] = imagecolorallocate($this->image, 255, 255, 255); // white
+        $this->colors[] = imagecolorallocate($this->image, 255, 0,   0  ); // red
+        $this->colors[] = imagecolorallocate($this->image, 0,   255, 0  ); // green
+        $this->colors[] = imagecolorallocate($this->image, 0,   0,   255); // blue
+        $this->colors[] = imagecolorallocate($this->image, 0,   255, 255); // cyan
+        $this->colors[] = imagecolorallocate($this->image, 255, 0,   255); // magenta
+        $this->colors[] = imagecolorallocate($this->image, 255, 255, 0  ); // yellow
     }
 
     //////////////////////////////////////////////////////////
-	function init_sqlite() {
-		if( $this->db ) { return $this->db; }
-		if( !in_array('sqlite', PDO::getAvailableDrivers() ) ) {
-			return $this->db = FALSE;
-		}
-		try {
-			$this->db = new PDO('sqlite::memory:');
-		} catch(PDOException $e) {
-			return $this->db = FALSE;
-		}
-		return TRUE;
-	}
-	
-
+    function init_sqlite() {
+        if( $this->db ) { return $this->db; }
+        if( !in_array('sqlite', PDO::getAvailableDrivers() ) ) {
+            return $this->db = FALSE;
+        }
+        try {
+            $this->db = new PDO('sqlite::memory:');
+        } catch(PDOException $e) {
+            return $this->db = FALSE;
+        }
+        return TRUE;
+    }
+    
     //////////////////////////////////////////////////////////
-	function sqlite_random($min, $max) {
-		
-		$sql = 'SELECT abs(random()) % (:high  - :low) + :low AS random';
+    function sqlite_random($min, $max) {
+        if( $min == '0' ) {
+            $mind = 1; 
+            $max += 1;
+        }
+        
+        $sql = 'SELECT abs(random()) % (:high  - :low) + :low AS random';
 
         if( !$statement = $this->db->prepare($sql) ) {
-			return $min;
-        }
-
-		$statement->bindParam( ':high', $max );
-		$statement->bindParam( ':low', $min );
-
-		 if( !$statement->execute() ) {
             return $min;
         }
-		
+
+        $statement->bindParam( ':high', $max );
+        $statement->bindParam( ':low', $min );
+
+         if( !$statement->execute() ) {
+            return $min;
+        }
+        
         if( !$r = $statement->fetchAll(PDO::FETCH_ASSOC) ) {
             return $min;
         }
-		
-		return $r[0]['random'];
-		
-	}
+        
+        return $r[0]['random'];
+        
+    }
 
-	//////////////////////////////////////////////////////////
-	function init_database() {
-		$this->debug('::init_database()');
-
-		try {
-			return $this->db = new PDO('sqlite:'. $this->database_name);
-		} catch(PDOException $e) {
-			$this->error('::init_database: ' . $this->database_name . '  ERROR: '. $e->getMessage());
-			return $this->db = FALSE;
-		}
-	}
-	
     //////////////////////////////////////////////////////////
     function is_positive_number($n='') { 
         if ( preg_match('/^[0-9]*$/', $n )) { return TRUE; }
